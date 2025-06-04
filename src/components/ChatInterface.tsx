@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageBubble } from "@/components/MessageBubble";
-import { Heart, Send } from "lucide-react";
+import { PhotoAttachment } from "@/components/PhotoAttachment";
+import { Heart, Send, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Message {
@@ -12,18 +13,20 @@ interface Message {
   text: string;
   isUser: boolean;
   timestamp: Date;
+  photo?: File;
 }
 
 export const ChatInterface = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      text: "Olá! 👋 Sou seu coach de relacionamentos com IA. Precisa de ajuda com frases de abertura, manter conversas interessantes, ou quer algumas dicas de carisma? Estou aqui para ajudar! Qual é sua situação amorosa?",
+      text: "Olá! 👋 Sou seu coach de relacionamentos com IA. Precisa de ajuda com frases de abertura, manter conversas interessantes, ou quer algumas dicas de carisma? Também posso analisar fotos para dar conselhos sobre seu perfil! Estou aqui para ajudar! Qual é sua situação amorosa?",
       isUser: false,
       timestamp: new Date(),
     },
   ]);
   const [inputValue, setInputValue] = useState("");
+  const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -36,8 +39,12 @@ export const ChatInterface = () => {
     scrollToBottom();
   }, [messages]);
 
-  const generateAIResponse = (userMessage: string): string => {
+  const generateAIResponse = (userMessage: string, hasPhoto: boolean): string => {
     const lowerMessage = userMessage.toLowerCase();
+    
+    if (hasPhoto) {
+      return "Ótima foto! 📸 Com base na imagem, posso te dar algumas dicas:\n\n✨ Sua expressão está natural - isso é perfeito!\n✨ O ângulo da foto valoriza bem seu rosto\n✨ Para o perfil, consider adicionar mais uma foto sorrindo\n✨ Boa iluminação sempre ajuda a destacar seus melhores traços\n\nQuer que eu analise mais alguma coisa específica sobre a foto ou tem alguma dúvida sobre como usar ela no seu perfil?";
+    }
     
     if (lowerMessage.includes("abertura") || lowerMessage.includes("primeira mensagem") || lowerMessage.includes("começar")) {
       return "Ótima pergunta! Aqui estão algumas frases de abertura infalíveis:\n\n💫 'Reparei [algo do perfil dela] - me conta mais sobre isso!'\n💫 'Sua [foto específica/interesse] chamou minha atenção. Qual é a história por trás?'\n💫 'Preciso perguntar - [pergunta genuína sobre os interesses dela]'\n\nO segredo é ser genuíno e mostrar que você realmente olhou o perfil! Que tipo de vibe você quer passar?";
@@ -52,7 +59,7 @@ export const ChatInterface = () => {
     }
     
     if (lowerMessage.includes("ajuda") || lowerMessage.includes("conselho") || lowerMessage.includes("dica")) {
-      return "Estou aqui para ajudar! 💕 Posso te auxiliar com:\n\n💬 Criação de mensagens perfeitas\n🎯 Tópicos e iniciadores de conversa\n✨ Desenvolvimento de confiança e charme\n💡 Interpretação de sinais e pistas\n🔥 Criação do seu estilo único de relacionamento\n\nSó me conte qual situação específica você está enfrentando, e eu te darei conselhos personalizados!";
+      return "Estou aqui para ajudar! 💕 Posso te auxiliar com:\n\n💬 Criação de mensagens perfeitas\n🎯 Tópicos e iniciadores de conversa\n✨ Desenvolvimento de confiança e charme\n💡 Interpretação de sinais e pistas\n🔥 Criação do seu estilo único de relacionamento\n📸 Análise de fotos para perfis\n\nSó me conte qual situação específica você está enfrentando, e eu te darei conselhos personalizados!";
     }
     
     // Respostas padrão para conselhos gerais de relacionamento
@@ -67,24 +74,27 @@ export const ChatInterface = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() && !selectedPhoto) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: inputValue,
+      text: inputValue || "📸 Foto anexada para análise",
       isUser: true,
       timestamp: new Date(),
+      photo: selectedPhoto || undefined,
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInputValue("");
+    const hasPhoto = !!selectedPhoto;
+    setSelectedPhoto(null);
     setIsTyping(true);
 
     // Simulate AI thinking time
     setTimeout(() => {
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: generateAIResponse(inputValue),
+        text: generateAIResponse(inputValue, hasPhoto),
         isUser: false,
         timestamp: new Date(),
       };
@@ -101,28 +111,44 @@ export const ChatInterface = () => {
     }
   };
 
+  const handlePhotoSelect = (file: File) => {
+    setSelectedPhoto(file);
+    toast({
+      title: "Foto anexada!",
+      description: "Sua foto foi anexada com sucesso. Envie sua mensagem para que eu possa analisá-la.",
+    });
+  };
+
+  const handlePhotoRemove = () => {
+    setSelectedPhoto(null);
+  };
+
   return (
-    <div className="max-w-4xl mx-auto h-[80vh] flex flex-col">
-      <Card className="flex-1 flex flex-col border-2 border-red-900/30 bg-gray-800/50 backdrop-blur-sm shadow-xl">
-        <CardHeader className="bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-t-lg">
-          <CardTitle className="flex items-center space-x-2">
-            <Heart className="w-6 h-6" />
-            <span>Chat do Coach de Relacionamentos</span>
+    <div className="max-w-5xl mx-auto h-[85vh] flex flex-col">
+      <Card className="flex-1 flex flex-col border-2 border-gradient-to-r from-red-500/30 via-pink-500/30 to-red-500/30 bg-gradient-to-br from-gray-800/80 via-gray-900/80 to-gray-800/80 backdrop-blur-xl shadow-2xl">
+        <CardHeader className="bg-gradient-to-r from-red-600 via-pink-600 to-red-500 text-white rounded-t-xl relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-white/5 to-white/10 animate-pulse"></div>
+          <CardTitle className="flex items-center space-x-3 relative z-10">
+            <div className="relative">
+              <Heart className="w-7 h-7" />
+              <Sparkles className="w-4 h-4 absolute -top-1 -right-1 text-yellow-300 animate-pulse" />
+            </div>
+            <span className="text-xl font-bold">Chat do Coach de Relacionamentos</span>
           </CardTitle>
         </CardHeader>
         
         <CardContent className="flex-1 flex flex-col p-0">
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-900/50 to-gray-800/50">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-gray-900/50 via-gray-800/30 to-gray-900/50 custom-scrollbar">
             {messages.map((message) => (
               <MessageBubble key={message.id} message={message} />
             ))}
             
             {isTyping && (
-              <div className="flex items-center space-x-2 text-gray-400">
+              <div className="flex items-center space-x-3 text-gray-400 animate-fade-in">
                 <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-red-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-red-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                  <div className="w-2 h-2 bg-red-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                  <div className="w-2 h-2 bg-gradient-to-r from-red-400 to-pink-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-gradient-to-r from-red-400 to-pink-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
+                  <div className="w-2 h-2 bg-gradient-to-r from-red-400 to-pink-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
                 </div>
                 <span className="text-sm">Seu coach está digitando...</span>
               </div>
@@ -131,22 +157,41 @@ export const ChatInterface = () => {
             <div ref={messagesEndRef} />
           </div>
           
-          <div className="border-t border-red-900/30 p-4 bg-gray-800/80">
-            <div className="flex space-x-2">
-              <Input
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Peça conselhos de relacionamento, ajuda com mensagens, ou dicas de carisma..."
-                className="flex-1 border-red-900/30 bg-gray-700/50 text-gray-100 placeholder-gray-400 focus:border-red-400"
-                disabled={isTyping}
+          <div className="border-t border-gray-700/50 p-6 bg-gradient-to-r from-gray-800/80 via-gray-900/80 to-gray-800/80 backdrop-blur-sm">
+            {selectedPhoto && (
+              <div className="mb-4">
+                <PhotoAttachment 
+                  onPhotoSelect={handlePhotoSelect}
+                  onPhotoRemove={handlePhotoRemove}
+                  selectedPhoto={selectedPhoto}
+                />
+              </div>
+            )}
+            
+            <div className="flex space-x-3 items-end">
+              <PhotoAttachment 
+                onPhotoSelect={handlePhotoSelect}
+                onPhotoRemove={handlePhotoRemove}
+                selectedPhoto={null}
               />
+              
+              <div className="flex-1">
+                <Input
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Peça conselhos de relacionamento, ajuda com mensagens, dicas de carisma ou anexe uma foto para análise..."
+                  className="border-gray-600/50 bg-gray-700/50 text-gray-100 placeholder-gray-400 focus:border-red-400/50 focus:ring-red-400/20 rounded-xl text-base py-3 transition-all duration-300"
+                  disabled={isTyping}
+                />
+              </div>
+              
               <Button
                 onClick={handleSendMessage}
-                disabled={!inputValue.trim() || isTyping}
-                className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700"
+                disabled={(!inputValue.trim() && !selectedPhoto) || isTyping}
+                className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white rounded-xl px-6 py-3 transition-all duration-300 transform hover:scale-105 shadow-lg"
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-5 h-5" />
               </Button>
             </div>
           </div>
