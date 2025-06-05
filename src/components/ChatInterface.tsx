@@ -4,8 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageBubble } from "@/components/MessageBubble";
 import { PhotoAttachment } from "@/components/PhotoAttachment";
-import { Heart, Send, Sparkles, ArrowLeft } from "lucide-react";
+import { Heart, Send, Sparkles, ArrowLeft, LogOut, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "../contexts/AuthContext";
 
 interface Message {
   id: string;
@@ -20,6 +21,7 @@ interface ChatInterfaceProps {
 }
 
 export const ChatInterface = ({ onBackToHome }: ChatInterfaceProps) => {
+  const { user, signOut } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -162,6 +164,8 @@ export const ChatInterface = ({ onBackToHome }: ChatInterfaceProps) => {
                 Chat do Coach de Relacionamentos
               </span>
             </div>
+
+            {/* Back button */}
             <Button
               onClick={onBackToHome}
               variant="ghost"
